@@ -48,9 +48,49 @@ def localize(colors,measurements,motions,sensor_right,p_move):
     pinit = 1.0 / float(len(colors)) / float(len(colors[0]))
     p = [[pinit for row in range(len(colors[0]))] for col in range(len(colors))]
 
-    # >>> Insert your code here <<<
+    steps = len(measurements)
+    for i in range(steps):
+        p = move(p, motions[i], p_move)
+        p = sense(p, measurements[i], colors, sensor_right)
 
     return p
+
+def sense(p, Z, colors, sensor_right):
+    q = []
+    for i in range(len(p)):
+        newRow = []
+        for j in range(len(p[i])):
+            hit = (Z == colors[i][j])
+            newProb = p[i][j]
+            if hit:
+                newProb *= sensor_right
+            else:
+                newProb *= (1-sensor_right)
+            newRow.append( newProb )
+        q.append(newRow)
+
+    s = 0
+    for i in range(len(q)):
+        s += sum(q[i]);
+
+    for i in range(len(q)):
+        for j in range(len(q[i])):
+            q[i][j] /= s
+
+    return q
+
+def move(p, U, p_move):
+    q = []
+    for i in range(len(p)):
+        newRow = []
+        for j in range(len(p[i])):
+            # No movement
+            s = (1 - p_move) * p[i][j]
+            # Movement
+            s += p_move * p[(i-U[0]) % len(p)][(j-U[1]) % len(p[i])]
+            newRow.append(s)
+        q.append(newRow)
+    return q
 
 def show(p):
     rows = ['[' + ','.join(map(lambda x: '{0:.5f}'.format(x),r)) + ']' for r in p]
